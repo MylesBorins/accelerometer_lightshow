@@ -23,7 +23,13 @@ char serInStr[30];  // array that will hold the serial input string
 void setup()
 {
 	BlinkM_beginWithPower();
- 	Serial.begin(19200);
+
+    Serial.begin(57600);
+	
+	BlinkM_stopScript(9); // This is so fucking janky
+
+	BlinkM_setFadeSpeed(0, 50);
+	BlinkM_fadeToRGB(0, 0, 0, 0);
 }
 
 // arduino loop func
