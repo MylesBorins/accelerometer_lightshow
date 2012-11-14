@@ -13,10 +13,22 @@
  *
  * Code built by modifying the source "BlinkMMulti"
  * by Tod E. Kurt, ThingM, http://thingm.com/
+ *
+ *(╯°□°)╯︵ ┻━┻
  */
 
 #include "Wire.h"
 #include "BlinkM_funcs.h"
+
+// Initial Pin Settings
+int accxPin = 0;
+int accyPin = 1;
+int acczPin = 2;
+
+// Set things up
+int accelX = 0;
+int accelY = 0;
+int accelZ = 0;
 
 char serInStr[30];  // array that will hold the serial input string
 
@@ -28,7 +40,7 @@ void setup()
 	
 	BlinkM_stopScript(9); // This is so fucking janky
 
-	BlinkM_setFadeSpeed(0, 50);
+	BlinkM_setFadeSpeed(0, 70);
 	BlinkM_fadeToRGB(0, 0, 0, 0);
 }
 
@@ -51,6 +63,22 @@ void loop()
 			BlinkM_fadeToRGB(9,a,b,c);
 		}
 	}
+	pollAccelerometer();
+	delay(10);
+}
+
+void pollAccelerometer(){
+	accelX = analogRead(accxPin);
+	accelY = analogRead(accyPin);
+	accelZ = analogRead(acczPin);
+	
+	Serial.print('b');
+	Serial.print(' ');
+	Serial.print(accelX);
+	Serial.print(' ');
+	Serial.print(accelY);
+	Serial.print(' ');
+	Serial.println(accelZ);
 }
 
 //read a string from the serial and store it in an array
