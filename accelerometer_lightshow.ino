@@ -14,6 +14,8 @@
  * Code built by modifying the source "BlinkMMulti"
  * by Tod E. Kurt, ThingM, http://thingm.com/
  *
+ * Also inspired by http://kiilo.org/tiki/tiki-index.php?page=Arduino-PureData-MessageSystem
+ *
  *(╯°□°)╯︵ ┻━┻
  */
 
@@ -42,6 +44,7 @@ int PosN = -1;       // index counter
 char VarHandlerChar = '@';       //
 
 void setup(void) {
+	pinMode(2, INPUT);
   BlinkM_beginWithPower();
   
   Serial.begin(115200);                 // Serialle Schnittstelle mit 115200 Baud
@@ -54,6 +57,7 @@ void setup(void) {
 
 void loop(void) {
   SerialParser();
+  delay(10);
 }
 
 // SERIAL PARSER **********************************
@@ -104,7 +108,7 @@ void CallHandler(void) {
       BlinkM_fadeToRGB(9, VarN[0], VarN[1], VarN[2]);
 	    break;    
 	  case 'Y':  // do something when B
-	    DebugOut();
+	    pollAccelerometer();
 	    break;        
 	  } // Switch END
 }
@@ -122,4 +126,18 @@ void DebugOut(void) {
     Serial.print(VarN[i]);
   }
   Serial.println(" !");
+}
+
+void pollAccelerometer(){
+	accelX = analogRead(accxPin);
+	accelY = analogRead(accyPin);
+	accelZ = analogRead(accyPin);
+	
+	Serial.print('a');
+	Serial.print(' ');
+	Serial.print(accelX);
+	Serial.print(' ');
+	Serial.print(accelY);
+	Serial.print(' ');
+	Serial.println(accelZ);
 }
