@@ -30,94 +30,96 @@ int accelX = 0;
 int accelY = 0;
 int accelZ = 0;
 
-char serInStr[30];  // array that will hold the serial input string
+// Message system Tester vars
 
-void setup()
-{
-	BlinkM_beginWithPower();
+int LedPin = 13;
+int stop = 0;
+int VarSign = 1;
+int SerIn = -1;          // incoming byte from serial RX
+long VarN[9] = {  
+  0, 0, 0, 0, 0, 0, 0, 0, 0 };      // number array
+int PosN = -1;       // index counter
+char VarHandlerChar = '@';       //
 
-    Serial.begin(57600);
-	
-	BlinkM_stopScript(9); // This is so fucking janky
+void setup(void) {
+  BlinkM_beginWithPower();
+  
+  Serial.begin(115200);                 // Serialle Schnittstelle mit 115200 Baud
 
-	BlinkM_setFadeSpeed(0, 70);
-	BlinkM_fadeToRGB(0, 0, 0, 0);
+  BlinkM_stopScript(9); // This is so fucking janky
+  
+  BlinkM_setFadeSpeed(0, 70);
+  BlinkM_fadeToRGB(0, 0, 0, 0);
 }
 
-// arduino loop func
-void loop()
-{
-	int num;
-	//read the serial port and create a string out of what you read
-	if( readSerialString() ) {
-		Serial.println(serInStr);
-		char cmd = serInStr[0];  // first char is command
-		char* str = serInStr;
-		while( *++str == ' ' );  // got past any intervening whitespace
-		num = atoi(str);         // the rest is arguments (maybe)
-    
-		if( cmd == 'c') { 
-			byte a = toHex( str[0],str[1] );
-			byte b = toHex( str[2],str[3] );
-			byte c = toHex( str[4],str[5] );
-			BlinkM_fadeToRGB(9,a,b,c);
-		}
-	}
-	pollAccelerometer();
-	delay(10);
+void loop(void) {
+  SerialParser();
 }
 
-void pollAccelerometer(){
-	accelX = analogRead(accxPin);
-	accelY = analogRead(accyPin);
-	accelZ = analogRead(acczPin);
-	
-	Serial.print('b');
-	Serial.print(' ');
-	Serial.print(accelX);
-	Serial.print(' ');
-	Serial.print(accelY);
-	Serial.print(' ');
-	Serial.println(accelZ);
-}
-
-//read a string from the serial and store it in an array
-//you must supply the array variable
-uint8_t readSerialString()
-{
-  if(!Serial.available()) {
-    return 0;
-  }
-  delay(10);  // wait a little for serial data
-
-  memset( serInStr, 0, sizeof(serInStr) ); // set it all to zero
-  int i = 0;
+// SERIAL PARSER **********************************
+void SerialParser(void) {
   while (Serial.available()) {
-    serInStr[i] = Serial.read();   // FIXME: doesn't check buffer overrun
-    i++;
+    SerIn = '@';
+    SerIn = Serial.read();
+    // debugging CODE
+    // Serial.print(' ');
+    // Serial.print(SerIn);
+    if ((SerIn >= 65) && (SerIn <= 90)) {          // if ASCII 'A' - 'Z'
+      VarHandlerChar = SerIn;  
+      for (PosN = 0; PosN < 9; PosN++) {           // clean up
+        VarN[PosN] =  0;                           // reset Var array
+      }  
+      PosN = -1;                              
+    }
+    if (SerIn == 45) {
+      VarSign = -1;
+    }
+    if ((SerIn >= 48) && (SerIn <= 57)) {          // if ASCII numeric '0' - '9'
+      VarN[PosN] = VarN[PosN] * 10 + (SerIn - 48);
+    }
+    if (SerIn == ' ') {                            // if ASCII " " detected
+      if (PosN > -1) {
+        VarN[PosN] = VarSign * VarN[PosN];           // assign sign
+        VarSign = 1;
+      }
+      PosN++;
+    }
+    if (SerIn == 33 || SerIn == 10 || SerIn == 13) {  // '!' or CR or LF ends all this spooky things ...
+      VarN[PosN] = VarSign * VarN[PosN];           // assign sign
+      VarSign = 1;
+      CallHandler();                               // Call funktion by first Char
+    }   // IfEND CR spooky things
   }
-  //serInStr[i] = 0;  // indicate end of read string
-  return i;  // return number of chars read
 }
 
-// -----------------------------------------------------
-// a really cheap strtol(s,NULL,16)
-#include <ctype.h>
-uint8_t toHex(char hi, char lo)
-{
-  uint8_t b;
-  hi = toupper(hi);
-  if( isxdigit(hi) ) {
-    if( hi > '9' ) hi -= 7;      // software offset for A-F
-    hi -= 0x30;                  // subtract ASCII offset
-    b = hi<<4;
-    lo = toupper(lo);
-    if( isxdigit(lo) ) {
-      if( lo > '9' ) lo -= 7;  // software offset for A-F
-      lo -= 0x30;              // subtract ASCII offset
-      b = b + lo;
-      return b;
-    } // else error
-  }  // else error
-  return 0;
+// CALLHANDLER SCHEDULER ******************************
+// which of YOUR functions are called?
+//
+
+void CallHandler(void) {
+  switch(VarHandlerChar) {
+	  case 'Z': // do something when A
+    
+      // Add an if statement to check that array is correct length
+      BlinkM_fadeToRGB(9, VarN[0], VarN[1], VarN[2]);
+	    break;    
+	  case 'Y':  // do something when B
+	    DebugOut();
+	    break;        
+	  } // Switch END
+}
+
+//
+// CALLHANDLER FUNCTIONS *******************************
+// YOUR funktions here:
+
+void DebugOut(void) {
+  //Serial.print("got an: ");
+  
+  Serial.write(VarHandlerChar);
+  for (int  i = 0; i < PosN; i++) {
+    Serial.print(' ');
+    Serial.print(VarN[i]);
+  }
+  Serial.println(" !");
 }
